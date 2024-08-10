@@ -14,7 +14,8 @@ Run the script .exe, put vídeo url and click in "Baixar", setings can be select
 Video quality = Qualidade do Vídeo (Original is good, Ruim is bad :D)  
 Formato de Saída = Output format
 
-Script Image Usage  
+Software exemple image  
+
 <img src="https://i.ibb.co/M14J4Jp/Screenshot-2024-08-09-215103.png" alt="image" width="35%"><br>
 
 # Disclaimer
