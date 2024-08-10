@@ -1,0 +1,4 @@
+tkinter
+yt-dlp
+ttkbootstrap
+configparser
