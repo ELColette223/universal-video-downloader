@@ -16,7 +16,7 @@ Formato de Saída = Output format
 
 Software exemple image  
 
-<img src="https://i.ibb.co/M14J4Jp/Screenshot-2024-08-09-215103.png" alt="image" width="35%"><br>
+<img src="https://i.ibb.co/2SQGq3w/exemple.png" alt="image" width="35%"><br>
 
 # Disclaimer
 
