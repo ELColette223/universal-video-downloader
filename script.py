@@ -1,6 +1,5 @@
 import tkinter as tk
-from tkinter import Menu
-from tkinter import filedialog, messagebox, ttk
+from tkinter import Menu, filedialog, messagebox, ttk
 import yt_dlp
 import threading
 import os
@@ -10,52 +9,44 @@ import shutil
 import signal
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
+from image_downloader import ImageDownloader  # Importa o módulo de download de imagens
+from generic import GenericDownloader  # Importa o módulo para baixar conteúdo genérico
 
 class YTDLApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Video Downloader - By: @elgustta - v1.0.0b")
+        self.root.resizable(False, False)
+        self.root.title("Content Downloader - By: @elgustta - v1.1.0")
 
         # Carregar configurações
         self.config = configparser.ConfigParser()
         self.config_file = 'config.ini'
         self.load_config()
 
-        # URL
-        ttk.Label(root, text="URL do Vídeo:", foreground="gray88").grid(row=0, column=0, padx=10, pady=10)
-        self.url_entry = ttk.Entry(root, width=50)
-        self.url_entry.grid(row=0, column=1, padx=10, pady=10)
+        # Criar Notebook para as abas
+        self.notebook = ttk.Notebook(root)
+        self.notebook.grid(row=0, column=0, padx=10, pady=10)
 
-        # Pasta de Download
-        ttk.Label(root, text="Pasta de Download:", foreground="gray88").grid(row=1, column=0, padx=10, pady=10)
-        self.folder_path = ttk.StringVar(value=self.default_download_folder)
-        ttk.Entry(root, textvariable=self.folder_path, width=50).grid(row=1, column=1, padx=10, pady=10)
-        ttk.Button(root, text="Procurar", command=self.browse_folder).grid(row=2, column=1, padx=10, pady=10, sticky='e')
+        # Frame para aba de vídeos
+        self.video_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.video_frame, text="Vídeos")
 
-        # Checkbox para salvar pasta
-        self.save_folder_var = ttk.BooleanVar(value=self.save_download_folder)
-        ttk.Checkbutton(root, text="Salvar pasta de Downloads", variable=self.save_folder_var).grid(row=2, column=1, padx=10, pady=5, sticky='w')
+        # Frame para aba de Instagram
+        self.image_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.image_frame, text="Instagram")
 
-        # Espaçamento
-        ttk.Label(root, text="").grid(row=3, column=0, padx=5, pady=5)
+        # Frame para aba de Genérico
+        self.generic_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.generic_frame, text="Genérico")
 
-        # Qualidade do Vídeo
-        ttk.Label(root, text="Qualidade do Vídeo:", foreground="gray88").grid(row=4, column=0, padx=5, pady=5)
-        self.quality_var = ttk.StringVar(value="Original")
-        qualities = ["Original", "Melhor", "Bom", "Ruim"]
-        ttk.OptionMenu(root, self.quality_var, *qualities).grid(row=4, column=1, padx=5, pady=5, sticky='ew')
+        # Construir a aba de vídeos
+        self.build_video_tab(self.video_frame)
 
-        # Formato de Saída
-        ttk.Label(root, text="Formato de Saída:", foreground="gray88").grid(row=5, column=0, padx=5, pady=5)
-        self.format_var = ttk.StringVar(value="mp4")
-        formats = ["Mp4", "Original"] #, "mkv", "mov" 
-        ttk.OptionMenu(root, self.format_var, *formats).grid(row=5, column=1, padx=5, pady=5, sticky='ew')
+        # Construir a aba de Instagram
+        self.build_image_tab(self.image_frame)
 
-        # Botão de Download
-        ttk.Button(root, text="Baixar", command=self.start_download_thread).grid(row=6, column=1, padx=10, pady=20, sticky='ew')
-
-        # Separador
-        ttk.Separator(root, orient='horizontal').grid(row=7, column=0, columnspan=2, sticky='ew', padx=10)
+        # Construir a aba de Genérico
+        self.build_generic_tab(self.generic_frame)
 
         # Texto de Rodapé
         footer_frame = ttk.Frame(root)
@@ -76,10 +67,96 @@ class YTDLApp:
         self.ydl = None  # Armazena a instância do YoutubeDL
         self.download_thread = None  # Thread do download
 
+    def build_video_tab(self, frame):
+        # URL
+        ttk.Label(frame, text="URL do Vídeo:", foreground="gray88").grid(row=0, column=0, padx=10, pady=10)
+        self.url_entry = ttk.Entry(frame, width=50)
+        self.url_entry.grid(row=0, column=1, padx=10, pady=10)
+
+        # Pasta de Download
+        ttk.Label(frame, text="Pasta de Download:", foreground="gray88").grid(row=1, column=0, padx=10, pady=10)
+        self.folder_path = ttk.StringVar(value=self.default_download_folder)
+        ttk.Entry(frame, textvariable=self.folder_path, width=50).grid(row=1, column=1, padx=10, pady=10)
+        ttk.Button(frame, text="Procurar", command=self.browse_folder).grid(row=2, column=1, padx=10, pady=10, sticky='e')
+
+        # Checkbox para salvar pasta
+        self.save_folder_var = ttk.BooleanVar(value=self.save_download_folder)
+        ttk.Checkbutton(frame, text="Salvar pasta de Downloads", variable=self.save_folder_var).grid(row=2, column=1, padx=10, pady=5, sticky='w')
+
+        # Espaçamento
+        ttk.Label(frame, text="").grid(row=3, column=0, padx=5, pady=5)
+
+        # Qualidade do Vídeo
+        ttk.Label(frame, text="Qualidade do Vídeo:", foreground="gray88").grid(row=4, column=0, padx=5, pady=5)
+        self.quality_var = ttk.StringVar(value="Original")
+        qualities = ["Original", "Melhor", "Bom", "Ruim"]
+        ttk.OptionMenu(frame, self.quality_var, *qualities).grid(row=4, column=1, padx=5, pady=5, sticky='ew')
+
+        # Formato de Saída
+        ttk.Label(frame, text="Formato de Saída:", foreground="gray88").grid(row=5, column=0, padx=5, pady=5)
+        self.format_var = ttk.StringVar(value="mp4")
+        formats = ["Mp4", "Original"] #, "mkv", "mov" 
+        ttk.OptionMenu(frame, self.format_var, *formats).grid(row=5, column=1, padx=5, pady=5, sticky='ew')
+
+        # Botão de Download
+        ttk.Button(frame, text="Baixar", command=self.start_download_thread).grid(row=6, column=1, columnspan=3, padx=10, pady=20, sticky='ew')
+
+    def build_image_tab(self, frame):
+        # URL do perfil
+        ttk.Label(frame, text="URL do Perfil do Instagram:", foreground="gray88").grid(row=0, column=0, padx=10, pady=10)
+        self.image_url_entry = ttk.Entry(frame, width=50)
+        self.image_url_entry.grid(row=0, column=1, padx=10, pady=10)
+
+        # Pasta de Download
+        ttk.Label(frame, text="Pasta de Download:", foreground="gray88").grid(row=1, column=0, padx=10, pady=10)
+        self.image_folder_path = ttk.StringVar(value=self.default_download_folder)
+        ttk.Entry(frame, textvariable=self.image_folder_path, width=50).grid(row=1, column=1, padx=10, pady=10)
+        ttk.Button(frame, text="Procurar", command=self.browse_generic_folder).grid(row=1, column=2, padx=10, pady=10, sticky='w')
+
+        # Botão de Download
+        ttk.Button(frame, text="Baixar Imagens", command=self.start_image_download_thread).grid(row=2, column=0, columnspan=3, padx=10, pady=20, sticky='ew')
+
+    def build_generic_tab(self, frame):
+        # URL do site
+        ttk.Label(frame, text="URL do Site:", foreground="gray88").grid(row=0, column=0, padx=10, pady=10)
+        self.generic_url_entry = ttk.Entry(frame, width=50)
+        self.generic_url_entry.grid(row=0, column=1, padx=10, pady=10)
+
+        # Pasta de Download
+        ttk.Label(frame, text="Pasta de Download:", foreground="gray88").grid(row=1, column=0, padx=10, pady=10)
+        self.generic_folder_path = ttk.StringVar(value=self.default_download_folder)
+        ttk.Entry(frame, textvariable=self.generic_folder_path, width=50).grid(row=1, column=1, padx=10, pady=10)
+        ttk.Button(frame, text="Procurar", command=self.browse_generic_folder).grid(row=1, column=2, padx=10, pady=10, sticky='w')
+
+        # Botão de Download
+        ttk.Button(frame, text="Baixar Conteúdo", command=self.start_generic_download_thread).grid(row=2, column=0, columnspan=3, padx=10, pady=20, sticky='ew')
+
+        # Espaçamento
+        ttk.Label(frame, text="").grid(row=3, column=0, padx=10, pady=10)
+
+        # Disclaimer
+        disclaimer_text = "Este modo é experimental e pode não funcionar em todos os sites.\nBaixa apenas imagem, fontes e vetores se disponíveis, não faz conversão de nada!"
+        disclaimer_label = ttk.Label(frame, text=disclaimer_text, foreground="red", wraplength=400, justify="center")
+        disclaimer_label.grid(row=4, column=0, columnspan=3, padx=10, pady=20)
+
+        # Centralizar conteúdo
+        frame.grid_rowconfigure(4, weight=1)  # Configura a linha para expandir
+        frame.grid_columnconfigure(0, weight=1)  # Centraliza na horizontal
+
     def browse_folder(self):
         folder_selected = filedialog.askdirectory()
         if folder_selected:
             self.folder_path.set(folder_selected)
+
+    def browse_image_folder(self):
+        folder_selected = filedialog.askdirectory()
+        if folder_selected:
+            self.image_folder_path.set(folder_selected)
+
+    def browse_generic_folder(self):
+        folder_selected = filedialog.askdirectory()
+        if folder_selected:
+            self.generic_folder_path.set(folder_selected)
 
     def load_config(self):
         if os.path.exists(self.config_file):
@@ -104,23 +181,13 @@ class YTDLApp:
         self.download_thread = threading.Thread(target=self.download_video)
         self.download_thread.start()
 
-    def check_disk_space(self, folder, required_space):
-        total, used, free = shutil.disk_usage(folder)
-        return free >= required_space
+    def start_image_download_thread(self):
+        self.download_thread = threading.Thread(target=self.download_images)
+        self.download_thread.start()
 
-    def select_best_format(self, formats, quality):
-        format_expression = 'bestvideo[ext=mp4][height<=2160]+bestaudio[ext=m4a]/best[ext=mp4][height<=2160]'
-
-        if quality == "Original":
-            format_expression = 'bestvideo[ext=mp4][height<=2160]+bestaudio[ext=m4a]/best[ext=mp4][height<=2160]'
-        elif quality == "Melhor":
-            format_expression = 'bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/best[ext=mp4][height<=1080]'
-        elif quality == "Bom":
-            format_expression = 'bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]'
-        elif quality == "Ruim":
-            format_expression = 'bestvideo[ext=mp4][height<=360]+bestaudio[ext=m4a]/best[ext=mp4][height<=360]'
-
-        return format_expression
+    def start_generic_download_thread(self):
+        self.download_thread = threading.Thread(target=self.download_generic_content)
+        self.download_thread.start()
 
     def download_video(self):
         url = self.url_entry.get()
@@ -181,6 +248,20 @@ class YTDLApp:
         finally:
             if self.cancel_requested.is_set():
                 self.cleanup_partial_download(download_folder, self.video_title)
+
+    def download_images(self):
+        url = self.image_url_entry.get()
+        download_folder = self.image_folder_path.get()
+
+        image_downloader = ImageDownloader(url, download_folder)
+        image_downloader.download_images()
+
+    def download_generic_content(self):
+        url = self.generic_url_entry.get()
+        download_folder = self.generic_folder_path.get()
+
+        generic_downloader = GenericDownloader(url, download_folder)
+        generic_downloader.download_content()
 
     def run_download(self, ydl_opts, url):
         self.ydl = yt_dlp.YoutubeDL(ydl_opts)
