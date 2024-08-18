@@ -16,7 +16,7 @@ class YTDLApp:
     def __init__(self, root):
         self.root = root
         self.root.resizable(False, False)
-        self.root.title("Content Downloader - By: @elgustta - v1.1.0")
+        self.root.title("Content Downloader - By: @elgustta - v1.1.1")
 
         # Carregar configurações
         self.config = configparser.ConfigParser()
@@ -189,28 +189,37 @@ class YTDLApp:
         self.download_thread = threading.Thread(target=self.download_generic_content)
         self.download_thread.start()
 
+    def check_disk_space(self, folder, required_space):
+        free = shutil.disk_usage(folder)
+        return free >= required_space
+
+    def select_best_format(self, formats, quality):
+        format_expression = 'bestvideo[ext=mp4][height<=2160]+bestaudio[ext=m4a]/best[ext=mp4][height<=2160]'
+
+        if quality == "Original":
+            format_expression = 'bestvideo[ext=mp4][height<=2160]+bestaudio[ext=m4a]/best[ext=mp4][height<=2160]'
+        elif quality == "Melhor":
+            format_expression = 'bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/best[ext=mp4][height<=1080]'
+        elif quality == "Bom":
+            format_expression = 'bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]'
+        elif quality == "Ruim":
+            format_expression = 'bestvideo[ext=mp4][height<=360]+bestaudio[ext=m4a]/best[ext=mp4][height<=360]'
+
+        return format_expression
+
     def download_video(self):
         url = self.url_entry.get()
-        download_folder = self.folder_path.get()
+        download_folder = self.folder_path.get() + '/Videos'
         quality = self.quality_var.get()
 
         if not url or not download_folder:
             messagebox.showwarning("Input Error", "Por favor, insira a URL e selecione a pasta de download.")
             return
 
-        try:
-            with yt_dlp.YoutubeDL() as ydl:
-                info_dict = ydl.extract_info(url, download=False)
-                self.video_title = info_dict.get('title', 'Desconhecido')
-                self.total_size = info_dict.get('filesize_approx', None) or info_dict.get('filesize', None)
-
-                if self.total_size and not self.check_disk_space(download_folder, self.total_size):
-                    messagebox.showerror("Erro de Espaço em Disco", "Espaço insuficiente no disco para o download.")
-                    return
-
-        except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao verificar o espaço em disco: {str(e)}")
-            return
+        with yt_dlp.YoutubeDL() as ydl:
+            info_dict = ydl.extract_info(url, download=False)
+            self.video_title = info_dict.get('title', 'Desconhecido')
+            self.total_size = sum([f.get('filesize', 0) for f in info_dict.get('requested_formats', []) if f.get('filesize')]) or info_dict.get('filesize_approx', None) or info_dict.get('filesize', None)
 
         ydl_opts = {
             'format': self.select_best_format(formats=info_dict.get('formats', []), quality=quality),
@@ -264,9 +273,9 @@ class YTDLApp:
         generic_downloader.download_content()
 
     def run_download(self, ydl_opts, url):
-        self.ydl = yt_dlp.YoutubeDL(ydl_opts)
+        self.ydl_process = yt_dlp.YoutubeDL(ydl_opts)
         try:
-            self.ydl.download([url])
+            self.ydl_process.download([url])
         except yt_dlp.utils.DownloadError:
             if self.cancel_requested.is_set():
                 messagebox.showinfo("Cancelado", "O download foi cancelado pelo usuário.")
@@ -275,7 +284,8 @@ class YTDLApp:
 
     def ytdl_hook(self, d):
         if self.cancel_requested.is_set():
-            self.ydl.downloader.interrupt_requested = True
+            self.ydl_process.cache.remove()  # Remove o cache do processo
+            os.kill(os.getpid(), signal.SIGINT)  # Envia um sinal de interrupção para parar o processo
             raise yt_dlp.utils.DownloadError("Download cancelado pelo usuário.")
             
         if d['status'] == 'downloading':
@@ -302,16 +312,25 @@ class YTDLApp:
             self.progress_bar['value'] = 100
             self.progress_popup.update()
 
+            # Limpa o cache do processo
+            self.ydl_process.cache.remove()
+
+            # Limpa arquivos parciais se houver
+            partial_files = [f for f in os.listdir(self.folder_path.get() + '/Videos') if f.startswith(self.video_title) and f.endswith('.part')]
+            for f in partial_files:
+                os.remove(os.path.join(self.folder_path.get() + '/Videos', f))
+
     def cancel_download(self):
         self.cancel_requested.set()  # Sinaliza que o cancelamento foi solicitado
         self.is_downloading = False
 
+        if self.ydl_process:
+            self.ydl_process.cache.remove()
+            os.kill(os.getpid(), signal.SIGINT)  # Interrompe o processo de download forçadamente
+
         if self.download_thread and self.download_thread.is_alive():
             self.download_thread.join()  # Aguarda a thread terminar
         self.progress_popup.destroy()
-        self.cleanup_partial_download(self.folder_path.get(), self.video_title)
-        
-        os.kill(os.getpid(), signal.SIGINT)
 
     def cleanup_partial_download(self, folder, title):
         # Remove o arquivo parcial
