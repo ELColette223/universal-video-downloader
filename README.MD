@@ -15,6 +15,7 @@ Video quality = Qualidade do Vídeo (Original is good, Ruim is bad :D)
 Formato de Saída = Output format
 
 Software exemple image 
+
 <img src="https://i.ibb.co/2SQGq3w/exemple.png" alt="image" width="35%"><br>
 
 # How to run on MacOS
