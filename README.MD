@@ -15,6 +15,7 @@ Video quality = Qualidade do Vídeo (Original is good, Ruim is bad :D)
 Formato de Saída = Output format
 
 Software exemple image 
+<img src="https://i.ibb.co/2SQGq3w/exemple.png" alt="image" width="35%"><br>
 
 # How to run on MacOS
 
@@ -24,8 +25,6 @@ Type and run the command `chmod +x Run_MacOS.sh`.
 Then run the command `./Run_MacOS.sh`.  
 
 The software will be installed automatically when you run the command above.
-
-<img src="https://i.ibb.co/2SQGq3w/exemple.png" alt="image" width="35%"><br>
 
 # Disclaimer
 
