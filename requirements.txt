@@ -1,7 +1,8 @@
-tkinter
 yt-dlp
 ttkbootstrap
 configparser
 instaloader
 cloudscraper
 beautifulsoup4
+ffmpeg
+requests

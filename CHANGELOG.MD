@@ -1,3 +1,8 @@
+# v1.1.2
+- MacOS Support
+- Fix requirements.txt
+- Remove unused font resource
+
 # v1.1.1
 - Fix check disk error
 - Fix progress bar

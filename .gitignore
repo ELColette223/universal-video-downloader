@@ -4,3 +4,7 @@ config.ini
 teste2.py
 yt-dlp.exe
 cookies.txt
+/__pycache__
+/build
+/myenv
+/dist

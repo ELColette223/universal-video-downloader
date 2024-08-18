@@ -16,7 +16,7 @@ class YTDLApp:
     def __init__(self, root):
         self.root = root
         self.root.resizable(False, False)
-        self.root.title("Content Downloader - By: @elgustta - v1.1.1")
+        self.root.title("Content Downloader - By: @elgustta - v1.1.2")
 
         # Carregar configurações
         self.config = configparser.ConfigParser()
@@ -75,7 +75,7 @@ class YTDLApp:
 
         # Pasta de Download
         ttk.Label(frame, text="Pasta de Download:", foreground="gray88").grid(row=1, column=0, padx=10, pady=10)
-        self.folder_path = ttk.StringVar(value=self.default_download_folder)
+        self.folder_path = ttk.StringVar(value=self.default_download_folder + '/ContentDownloader')
         ttk.Entry(frame, textvariable=self.folder_path, width=50).grid(row=1, column=1, padx=10, pady=10)
         ttk.Button(frame, text="Procurar", command=self.browse_folder).grid(row=2, column=1, padx=10, pady=10, sticky='e')
 
@@ -109,7 +109,7 @@ class YTDLApp:
 
         # Pasta de Download
         ttk.Label(frame, text="Pasta de Download:", foreground="gray88").grid(row=1, column=0, padx=10, pady=10)
-        self.image_folder_path = ttk.StringVar(value=self.default_download_folder)
+        self.image_folder_path = ttk.StringVar(value=self.default_download_folder + '/ContentDownloader/Instagram')
         ttk.Entry(frame, textvariable=self.image_folder_path, width=50).grid(row=1, column=1, padx=10, pady=10)
         ttk.Button(frame, text="Procurar", command=self.browse_generic_folder).grid(row=1, column=2, padx=10, pady=10, sticky='w')
 
@@ -124,7 +124,7 @@ class YTDLApp:
 
         # Pasta de Download
         ttk.Label(frame, text="Pasta de Download:", foreground="gray88").grid(row=1, column=0, padx=10, pady=10)
-        self.generic_folder_path = ttk.StringVar(value=self.default_download_folder)
+        self.generic_folder_path = ttk.StringVar(value=self.default_download_folder + '/ContentDownloader/Generic')
         ttk.Entry(frame, textvariable=self.generic_folder_path, width=50).grid(row=1, column=1, padx=10, pady=10)
         ttk.Button(frame, text="Procurar", command=self.browse_generic_folder).grid(row=1, column=2, padx=10, pady=10, sticky='w')
 
